@@ -5,10 +5,3 @@ beautifulsoup4
 pyChatGPT
 psycopg2
 openai
-LineBotApi
-WebhookHandler
-json
-configparser
-os
-logging
-time
