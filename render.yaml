@@ -1,0 +1,20 @@
+services:
+- type: web
+  name: linebot-flask-sander
+  env: python
+  repo: https://github.com/WHWSteven/weather.git
+  plan: free
+  autoDeploy: false
+  buildCommand: pip install gunicorn -r requirements.txt
+  startCommand: gunicorn app:app
+  envVars:
+  - key: LINE_CHANNEL_ACCESS_TOKEN
+    sync: false
+  - key: LINE_CHANNEL_SECRET
+    sync: false
+  - key: User-Agent
+    sync: false
+  - key: Internal_Database_URL
+    sync: false
+  - key: SESSION_TOKEN
+    sync: false
