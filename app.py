@@ -4,17 +4,21 @@ import string
 from flask import Flask, request, abort, render_template
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from linebot.models import MessageEvent, TextMessage, TextSendMessage, MessageTemplateAction, FlexSendMessage, BubbleContainer, ImageComponent
+from linebot.models import PostbackAction, URIAction, MessageAction, TemplateSendMessage, ButtonsTemplate, CarouselTemplate,  CarouselColumn
+from linebot.models import *
 import requests
 import json
 import configparser
 import os
+import time
 import logging
+import openai
 # 1.setup log path and create log directory
 logName = 'MyProgram.log'
 logDir = 'log'
 logPath = logDir + '/' + logName
-# 1231321231231121131312
+
 
 # create log directory
 os.makedirs(logDir, exist_ok=True)
@@ -53,6 +57,7 @@ config.read('config.ini')
 
 line_bot_api = LineBotApi(config.get('line-bot', 'channel_access_token'))
 handler = WebhookHandler(config.get('line-bot', 'channel_secret'))
+
 my_line_id = config.get('line-bot', 'my_line_id')
 end_point = config.get('line-bot', 'end_point')
 line_login_id = config.get('line-bot', 'line_login_id')
@@ -63,11 +68,12 @@ HEADER = {
     'Authorization': f'Bearer {config.get("line-bot", "channel_access_token")}'
 }
 
-key_city = ['基隆市天氣', '嘉義市天氣', '臺北市天氣', '台北市天氣', '嘉義縣天氣', '新北市天氣', '臺南市天氣', '台南市天氣', '桃園縣天氣', '高雄市天氣', '新竹市天氣', '屏東縣天氣',
-            '新竹縣天氣', '臺東縣天氣', '台東縣天氣', '苗栗縣天氣', '花蓮縣天氣', '臺中市天氣', '台中市天氣', '宜蘭縣天氣', '彰化縣天氣', '澎湖縣天氣', '南投縣天氣', '金門縣天氣', '雲林縣天氣', '連江縣天氣']
+
+key_city = ['基隆市天氣', '嘉義市天氣', '臺北市天氣', '台北市天氣', '嘉義縣天氣', '新北市天氣', '臺南市天氣', '台南市天氣', '桃園市天氣', '高雄市天氣', '新竹市天氣', '屏東縣天氣', '桃園縣天氣',
+            '宜蘭市天氣', '新竹縣天氣', '臺東縣天氣', '台東縣天氣', '苗栗縣天氣', '花蓮縣天氣', '臺中市天氣', '台中市天氣', '宜蘭縣天氣', '彰化縣天氣', '澎湖縣天氣', '南投縣天氣', '金門縣天氣', '雲林縣天氣', '連江縣天氣']
 
 
-@app.route("/", methods=['POST', 'GET'])
+@ app.route("/", methods=['POST', 'GET'])
 def index():
     if request.method == 'GET':
         return 'ok'
@@ -85,73 +91,88 @@ def index():
             if events[0]["message"]["type"] == "text":
                 text = events[0]["message"]["text"]
 
-                if text == "我的名字":
-                    payload["messages"] = [getNameEmojiMessage()]
-                elif text == "出去玩囉":
-                    payload["messages"] = [getPlayStickerMessage()]
-                elif text == "台北101":
-                    payload["messages"] = [getTaipei101ImageMessage(),
-                                           getTaipei101LocationMessage(),
-                                           getMRTVideoMessage()
-                                           ]
-                elif text == "quoda":
+                if text == "各縣市天氣查詢":
+                    payload["messages"] = [flx()]
+                elif text == "天氣查詢":
                     payload["messages"] = [
-                        {
-                            "type": "text",
-                            "text": getTotalSentMessageCount()
-                        }
-                    ]
+                        reply_weather_table(), reply_weather_table2()]
+                elif text == "t":
+                    payload["messages"] = [t()]
+                elif text in {'雷達', '雷達回波'}:
+                    line_bot_api.reply_message(
+                        replyToken, ImageSendMessage(original_content_url=f'https://cwbopendata.s3.ap-northeast-1.amazonaws.com/MSC/O-A0058-003.png?{time.time_ns()}',
+                                                     preview_image_url=f'https://cwbopendata.s3.ap-northeast-1.amazonaws.com/MSC/O-A0058-003.png?{time.time_ns()}'
+                                                     ))
+
+                elif text == '地震' or text == '地震查詢':
+                    u = get_eq_pic()
+                    line_bot_api.reply_message(
+                        replyToken, ImageSendMessage(original_content_url=u,
+                                                     preview_image_url=u
+                                                     ))
+
                 elif text in key_city:
                     if text[0] == '台':
                         text = text.replace('台', '臺')
                     user_city = text[:3]
                     weather = getWeather(user_city)
+                    wx = wxx(weather)
+                    ci = ciw(weather)
                     msg_weaterInfo = transferWeatherData(weather)
+                    # msg_weaterInfo[3] = 80
+                    # msg_weaterInfo[8] = 100
+                    if msg_weaterInfo[3] > 42:
+                        url = 'https://cdn-icons-png.flaticon.com/512/622/622085.png'
+                    elif 41 > msg_weaterInfo[3] & msg_weaterInfo[3] > 20:
+                        url = 'https://cdn-icons-png.flaticon.com/512/2042/2042088.png'
+                    else:
+                        url = 'https://cdn-icons-png.flaticon.com/512/1838/1838873.png'
+                    if msg_weaterInfo[8] > 42:
+                        url1 = 'https://cdn-icons-png.flaticon.com/512/622/622085.png'
+                    else:
+                        url1 = 'https://cdn-icons-png.flaticon.com/512/1838/1838873.png'
+
                     line_bot_api.reply_message(
-                        replyToken, TextSendMessage(text=msg_weaterInfo))
-                    print('transferWeatherData: success')
-                    payload["messages"] = [
-                        {
-                            "type": "text",
-                            # "text": getWeather(city)
-                        }
-                    ]
-                elif text == "今日確診人數":
-                    payload["messages"] = [
-                        {
-                            "type": "text",
-                            "text": getTodayCovid19Message()
-                        }
-                    ]
-                elif text == "主選單":
-                    payload["messages"] = [
-                        {
-                            "type": "template",
-                            "altText": "This is a buttons template",
-                            "template": {
-                                    "type": "buttons",
-                                    "title": "Menu",
-                                    "text": "Please select",
-                                    "actions": [
-                                        {
-                                            "type": "message",
-                                            "label": "我的名字",
-                                            "text": "我的名字"
-                                        },
-                                        {
-                                            "type": "message",
-                                            "label": "今日確診人數",
-                                            "text": "今日確診人數"
-                                        },
-                                        {
-                                            "type": "uri",
-                                            "label": "聯絡我",
-                                            "uri": f"tel:{my_phone}"
-                                        }
-                                    ]
-                            }
-                        }
-                    ]
+                        replyToken, TemplateSendMessage(
+                            alt_text=user_city + '未來 36 小時天氣預測',
+                            template=CarouselTemplate(
+                                columns=[
+                                    CarouselColumn(
+                                        thumbnail_image_url=url,
+                                        title='{}'.format(
+                                            msg_weaterInfo[0]),
+                                        text='天氣狀況： \t{}\n舒適度： \t{}\n溫度： \t{}°C  至 \t{}°C \n降雨機率： {}%\n\n{}\n{}\n{}'.format(
+                                            wx[0], ci[0], msg_weaterInfo[
+                                                1], msg_weaterInfo[2], msg_weaterInfo[3], msg_weaterInfo[9], msg_weaterInfo[10], msg_weaterInfo[11]
+                                        ),
+                                        actions=[
+                                            URIAction(
+                                                label='氣象局詳細內容',
+                                                uri='https://www.cwb.gov.tw/V8/C/W/County/index.html'
+                                            )
+                                        ]
+                                    ),
+                                    CarouselColumn(
+                                        thumbnail_image_url=url1,
+                                        title='{}'.format(
+                                            msg_weaterInfo[5]),
+                                        text='天氣狀況： \t{}\n舒適度： \t{}\n溫度： \t{}°C  至 \t{}°C \n降雨機率： {}%\n'.format(
+                                            wx[2], ci[2],  msg_weaterInfo[6], msg_weaterInfo[7], msg_weaterInfo[8]),
+
+                                        actions=[
+                                            URIAction(
+                                                label='氣象局詳細內容',
+                                                uri='https://www.cwb.gov.tw/V8/C/W/County/index.html'
+                                            )
+                                        ]
+                                    )
+
+                                ]
+                            )
+
+
+                        ))
+
                 else:
                     payload["messages"] = [
                         {
@@ -165,34 +186,24 @@ def index():
                 title = events[0]["message"]["title"]
                 latitude = events[0]["message"]["latitude"]
                 longitude = events[0]["message"]["longitude"]
-                payload["messages"] = [
-                    getLocationConfirmMessage(title, latitude, longitude)]
+                # payload["messages"] = [
+                #     getLocationConfirmMessage(title, latitude, longitude)]
                 logger.info(payload)
                 replyMessage(payload)
-        elif events[0]["type"] == "postback":
-            if "params" in events[0]["postback"]:
-                reservedTime = events[0]["postback"]["params"]["datetime"].replace(
-                    "T", " ")
-                payload["messages"] = [
-                    {
-                        "type": "text",
-                        "text": F"已完成預約於{reservedTime}的叫車服務"
-                    }
-                ]
-                replyMessage(payload)
+
             else:
                 data = json.loads(events[0]["postback"]["data"])
                 logger.info(data)
                 action = data["action"]
-                if action == "get_near":
-                    data["action"] = "get_detail"
-                    payload["messages"] = [getCarouselMessage(data)]
-                elif action == "get_detail":
-                    del data["action"]
-                    payload["messages"] = [getTaipei101ImageMessage(),
-                                           getTaipei101LocationMessage(),
-                                           getMRTVideoMessage(),
-                                           getCallCarMessage(data)]
+                # if action == "get_near":
+                #     data["action"] = "get_detail"
+                #     payload["messages"] = [getCarouselMessage(data)]
+                # elif action == "get_detail":
+                #     del data["action"]
+                #     payload["messages"] = [getTaipei101ImageMessage(),
+                #                            getTaipei101LocationMessage(),
+                #                            getMRTVideoMessage(),
+                #                            getCallCarMessage(data)]
                 replyMessage(payload)
 
     return 'OK'
@@ -231,6 +242,650 @@ def sendTextMessageToMe():
     return 'OK'
 
 
+def get_eq_pic():
+    msg = ['找不到地震資訊']            # 預設回傳的訊息
+    try:
+        code = 'CWB-5903F8B2-FC6A-4703-9440-01FDFD7B64B2'
+        url = f'https://opendata.cwb.gov.tw/api/v1/rest/datastore/E-A0016-001?Authorization={code}'
+        e_data = requests.get(url)                                   # 爬取地震資訊網址
+        eq = (json.loads(e_data.text)
+              )['records']['Earthquake']
+        for i in eq:
+            img = i['ReportImageURI']                                # 地震圖
+            msg = img
+            break     # 取出第一筆資料後就 break
+        return msg    # 回傳 msg
+    except:
+        return msg    # 如果取資料有發生錯誤，直接回傳 msg
+
+
+def reply_weather_table():
+    with open("./json/weather_table.json", 'r', encoding='utf-8') as f:
+        message = json.load(f)
+    return message
+
+
+def reply_weather_table2():
+    with open("./json/weather_table2.json", 'r', encoding='utf-8') as f:
+        message = json.load(f)
+    return message
+
+
+def t():
+    with open("./json/t.json", 'r', encoding='utf-8') as f:
+        message = json.load(f)
+    return message
+
+
+def flx():
+    line_bot_api.push_message(my_line_id, FlexSendMessage(
+        alt_text='各縣市天氣查詢',
+        contents={
+
+            "type": "carousel",
+            "contents": [
+                {
+                    "type": "bubble",
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "請選擇想查詢的縣市",
+                                "weight": "bold",
+                                "size": "md",
+                                "decoration": "none",
+                                "align": "center",
+                                "gravity": "top"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "baseline",
+                                "contents": [],
+                                "spacing": "xs",
+                                "margin": "md"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "text": "基隆市天氣",
+                                            "label": "基隆市"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+
+                                    },
+
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "宜蘭縣",
+                                            "text": "宜蘭縣天氣"
+
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary", "position": "relative",
+                                        "margin": "sm"
+
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "separator",
+                                        "margin": "sm",
+                                        "color": "#ffffff"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "臺北市",
+                                            "text": "臺北市天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    },
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "新北市",
+                                            "text": "新北市天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "separator",
+                                        "margin": "sm",
+                                        "color": "#ffffff"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "桃園市",
+                                            "text": "桃園市天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    },
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "桃園縣",
+                                            "text": "桃園縣天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "separator",
+                                        "margin": "sm",
+                                        "color": "#ffffff"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "新竹市",
+                                            "text": "新竹市天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    },
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "新竹縣",
+                                            "text": "新竹縣天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "separator",
+                                        "margin": "sm",
+                                        "color": "#ffffff"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "苗栗縣",
+                                            "text": "苗栗縣天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    },
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "臺中市",
+                                            "text": "臺中市天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "separator",
+                                        "margin": "sm",
+                                        "color": "#ffffff"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "彰化縣",
+                                            "text": "彰化縣天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    },
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "南投縣",
+                                            "text": "南投縣天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "separator",
+                                        "margin": "sm",
+                                        "color": "#ffffff"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "雲林縣",
+                                            "text": "雲林縣天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    },
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "嘉義市",
+                                            "text": "嘉義市天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "separator",
+                                        "margin": "sm",
+                                        "color": "#ffffff"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "嘉義縣",
+                                            "text": "嘉義縣天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    },
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "臺南市",
+                                            "text": "臺南市天氣",
+
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "separator",
+                                        "margin": "sm",
+                                        "color": "#ffffff"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "高雄市",
+                                            "text": "高雄市天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    },
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "屏東縣",
+                                            "text": "屏東縣天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    }
+                                ]
+                            }
+                        ],
+
+                        # "background": {
+                        #     "color": "#ffedbc"
+
+                        #     #     "type": "linearGradient",
+                        #     #     "angle": "0deg",
+                        #     #     "endColor": "#89cff0",
+                        #     #     "startColor": "#fffeec"
+                        # }
+                    },
+                    "footer": {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {
+                                "type": "button",
+                                "margin": "none",
+                                "height": "sm",
+                                "style": "link",
+                                "color": "#6d6c6c",
+                                "gravity": "bottom",
+                                "action":  {
+                                    "type": "uri",
+                                    "label": "資料來源：中央氣象局",
+                                    "uri": "https://www.cwb.gov.tw/V8/C/"
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "type": "bubble",
+                    "body": {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "請選擇想查詢的縣市",
+                                "weight": "bold",
+                                "size": "md",
+                                "decoration": "none",
+                                "align": "center",
+                                "gravity": "top"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "baseline",
+                                "contents": [],
+                                "spacing": "xs",
+                                "margin": "md"
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "text": "花蓮縣天氣",
+                                            "label": "花蓮縣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+
+                                    },
+
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "臺東縣",
+                                            "text": "臺東縣天氣"
+
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary", "position": "relative",
+                                        "margin": "sm"
+
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "separator",
+                                        "margin": "sm",
+                                        "color": "#ffffff"
+                                    }
+                                ]
+                            },
+
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "澎湖縣",
+                                            "text": "澎湖縣天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    },
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "金門縣",
+                                            "text": "金門縣天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "separator",
+                                        "margin": "sm",
+                                        "color": "#ffffff"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "horizontal",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "連江縣",
+                                            "text": "連江縣天氣"
+                                        },
+                                        "color": "#d3d3d3",
+                                        "style": "secondary",
+                                        "position": "relative",
+                                        "margin": "sm"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "separator",
+                                        "margin": "sm",
+                                        "color": "#ffffff"
+                                    }
+                                ]
+                            },
+
+                            {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "separator",
+                                        "margin": "sm",
+                                        "color": "#ffffff"
+                                    }
+                                ]
+                            }
+
+                        ],
+
+                        # "background": {
+                        #     "color": "#87cefa"
+
+                        #     #     "type": "linearGradient",
+                        #     #     "angle": "0deg",
+                        #     #     "endColor": "#89cff0",
+                        #     #     "startColor": "#fffeec"
+                        # }
+                    },
+                    "footer": {
+                        "type": "box",
+                        "layout": "horizontal",
+                        "contents": [
+                            {
+                                "type": "button",
+                                "margin": "none",
+                                "height": "sm",
+                                "style": "link",
+                                "color": "#6d6c6c",
+                                "gravity": "bottom",
+                                "action":  {
+                                    "type": "uri",
+                                    "label": "資料來源：中央氣象局",
+                                    "uri": "https://www.cwb.gov.tw/V8/C/"
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+
+    ))
+
+
 def getWeather(city):
     token = 'CWB-5903F8B2-FC6A-4703-9440-01FDFD7B64B2'
     url = 'https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-5903F8B2-FC6A-4703-9440-01FDFD7B64B2'
@@ -252,37 +907,25 @@ def getWeather(city):
         return 'no data'
 
 
-def transferWeatherData(item):
+def wxx(item):
+    # 天氣現象
     cityName = item["locationName"]
-
-    weatherElement = item["weatherElement"]  # 取得該縣市的天氣資料
-
-# 天氣現象
+    weatherElement = item["weatherElement"]
     if (weatherElement[0]["elementName"] == 'Wx'):
         timeDicts = weatherElement[0]["time"]  # 依時間區段設定早晚跟明天
         Wx_morning = timeDicts[0]["parameter"]["parameterName"]
         Wx_night = timeDicts[1]["parameter"]["parameterName"]
         Wx_tomorrow = timeDicts[2]["parameter"]["parameterName"]
+    wx = {}
+    wx[0] = Wx_morning
+    wx[1] = Wx_night
+    wx[2] = Wx_tomorrow
+    return wx
 
-# 降雨機率
-    if (weatherElement[1]["elementName"] == 'PoP'):
-        timeDicts = weatherElement[1]["time"]  # 依時間區段設定早晚跟明天
-        PoP_morning = str(timeDicts[0]["parameter"]["parameterName"]) + \
-            timeDicts[0]["parameter"]["parameterUnit"]
-        PoP_night = str(timeDicts[1]["parameter"]["parameterName"]) + \
-            timeDicts[1]["parameter"]["parameterUnit"]
-        PoP_tomorrow = str(timeDicts[2]["parameter"]["parameterName"]) + \
-            timeDicts[2]["parameter"]["parameterUnit"]
 
-# 低溫
-    if (weatherElement[2]["elementName"] == 'MinT'):
-        timeDicts = weatherElement[2]["time"]  # 依時間區段設定早晚跟明天
-        MinT_morning = timeDicts[0]["parameter"]["parameterName"] + \
-            timeDicts[0]["parameter"]["parameterUnit"]
-        MinT_night = timeDicts[1]["parameter"]["parameterName"] + \
-            timeDicts[1]["parameter"]["parameterUnit"]
-        MinT_tomorrow = timeDicts[2]["parameter"]["parameterName"] + \
-            timeDicts[2]["parameter"]["parameterUnit"]
+def ciw(item):
+    cityName = item["locationName"]
+    weatherElement = item["weatherElement"]
 
 # 舒適度
     if (weatherElement[3]["elementName"] == 'CI'):
@@ -290,27 +933,75 @@ def transferWeatherData(item):
         CI_morning = timeDicts[0]["parameter"]["parameterName"]
         CI_night = timeDicts[1]["parameter"]["parameterName"]
         CI_tomorrow = timeDicts[2]["parameter"]["parameterName"]
+    ci = {}
+    ci[0] = CI_morning
+    ci[1] = CI_night
+    ci[2] = CI_tomorrow
+    return ci
+
+
+def transferWeatherData(item):
+    cityName = item["locationName"]
+    weatherElement = item["weatherElement"]  # 取得該縣市的天氣資料
+
+# 降雨機率
+    if (weatherElement[1]["elementName"] == 'PoP'):
+        timeDicts = weatherElement[1]["time"]  # 依時間區段設定早晚跟明天
+        PoP_morning = int(timeDicts[0]["parameter"]["parameterName"])
+        PoP_night = int(timeDicts[1]["parameter"]["parameterName"])
+        PoP_tomorrow = int(timeDicts[2]["parameter"]["parameterName"])
+
+# 低溫
+    if (weatherElement[2]["elementName"] == 'MinT'):
+        timeDicts = weatherElement[2]["time"]
+        # 依時間區段設定早晚跟明天
+        MinT_morning = timeDicts[0]["parameter"]["parameterName"]
+        MinT_night = timeDicts[1]["parameter"]["parameterName"]
+        MinT_tomorrow = timeDicts[2]["parameter"]["parameterName"]
 
 # 高溫
     if (weatherElement[4]["elementName"] == 'MaxT'):
         timeDicts = weatherElement[4]["time"]  # 依時間區段設定早晚跟明天
-        MaxT_morning = timeDicts[0]["parameter"]["parameterName"] + \
-            timeDicts[0]["parameter"]["parameterUnit"]
-        MaxT_night = timeDicts[1]["parameter"]["parameterName"] + \
-            timeDicts[1]["parameter"]["parameterUnit"]
-        MaxT_tomorrow = timeDicts[2]["parameter"]["parameterName"] + \
-            timeDicts[2]["parameter"]["parameterUnit"]
+        MaxT_morning = timeDicts[0]["parameter"]["parameterName"]
+        MaxT_night = timeDicts[1]["parameter"]["parameterName"]
+        MaxT_tomorrow = timeDicts[2]["parameter"]["parameterName"]
 
         today = timeDicts[0]["startTime"].split(
             ",")
         tomorrow = timeDicts[2]["endTime"].split(
             ",")
+    if MaxT_morning > MaxT_night:
+        max_t = MaxT_morning
+    elif MaxT_morning < MaxT_night:
+        max_t = MaxT_night
+    else:
+        max_t = MaxT_morning
+    if MinT_morning < MinT_night:
+        min_t = MinT_morning
+    elif MinT_morning > MinT_night:
+        min_t = MinT_night
+    else:
+        min_t = MinT_night
 
-    replyMsg = cityName + "今明兩日天氣預報:" + '\n' + \
-        str(today[0][0:10]) + ":" + '\n' + Wx_morning + " " + CI_morning + '\n' + "白天高溫: " + MaxT_morning + '\n' + "今白天低溫: " + MinT_morning + '\n' + "白天下雨機率: " + PoP_morning + '\n' + "晚上高溫: " + MaxT_night + '\n' + "晚上低溫: " + \
-        MinT_night + '\n' + "晚上下雨機率: " + PoP_night + '\n' + \
-        str(tomorrow[0][0:10]) + ":" + '\n' + Wx_tomorrow + " " + CI_tomorrow + '\n' + "高溫: " + \
-        MaxT_tomorrow + '\n' + "低溫: " + MinT_tomorrow + '\n' + "下雨機率: " + PoP_tomorrow
+    replyMsg = {}
+    replyMsg[0] = str(today[0][0:10])
+    replyMsg[1] = min_t
+    replyMsg[2] = max_t
+    replyMsg[3] = PoP_morning
+    replyMsg[4] = PoP_night
+    replyMsg[5] = str(tomorrow[0][0:10])
+    replyMsg[6] = MinT_tomorrow
+    replyMsg[7] = MaxT_tomorrow
+    replyMsg[8] = PoP_tomorrow
+    replyMsg[9] = ""
+    replyMsg[10] = ""
+    replyMsg[11] = ""
+
+    # replyMsg =  \
+    #     str(today[0][0:10]) + min_t + max_t + PoP_morning + PoP_night + \
+    #     str(tomorrow[0][0:10]) + \
+    #     MinT_tomorrow + MaxT_tomorrow + PoP_tomorrow
+
 
 # 低溫提醒
 # notice_minT()
@@ -322,174 +1013,20 @@ def transferWeatherData(item):
     pop = max([weatherElement[1]["time"][0]["parameter"]["parameterName"], weatherElement[1]["time"]
                [1]["parameter"]["parameterName"], weatherElement[1]["time"][2]["parameter"]["parameterName"]])
 
-    if (int(minT) < 10):
-        replyMsg = replyMsg + "請注意低溫"
-        return str(replyMsg)
+    if (int(min_t) < 13):
+        replyMsg[9] = "請注意低溫\n"
+        return (replyMsg)
 
-    elif (int(maxT) > 36):
-        replyMsg = replyMsg + "請注意高溫"
-        return str(replyMsg)
+    elif (int(max_t) > 36):
+        replyMsg[10] = "請注意高溫\n"
+        return (replyMsg)
 
     elif (int(pop) > 42):  # 降雨提醒 pop=12h/ pop6=6h
-        replyMsg = replyMsg + '\n' + "請攜待雨具"
-        return str(replyMsg)
+        replyMsg[11] = "請攜待雨具\n"
+        return (replyMsg)
 
     else:
         return replyMsg
-
-
-def getNameEmojiMessage():
-    lookUpStr = string.ascii_uppercase + string.ascii_lowercase
-    productId = "5ac21a8c040ab15980c9b43f"
-    name = "Harvey"
-    message = dict()
-    message['type'] = "text"
-    message['text'] = "$" * len(name)
-    emojis = list()
-    for i, c in enumerate(name):
-        emojis.append({
-            "index": i,
-            "productId": productId,
-            "emojiId": f"{lookUpStr.index(c)+ 1}".zfill(3)
-        })
-    message['emojis'] = emojis
-    return message
-
-
-def getCarouselMessage(data):
-    message = {
-        "type": "template",
-        "altText": "this is a image carousel template",
-        "template": {
-            "type": "image_carousel",
-            "columns": [
-              {
-                "imageUrl": F"{end_point}/static/taipei_101.jpeg",
-                "action": {
-                    "type": "postback",
-                    "label": "台北101",
-                    "data": json.dumps(data)
-                }
-              },
-                {
-                  "imageUrl": F"{end_point}/static/02_shan.jpg",
-                  "action": {
-                      "type": "postback",
-                      "label": "象山步道",
-                      "data": json.dumps(data)
-                  }
-              },
-                {
-                    "imageUrl": F"{end_point}/static/03_yuanshan.jpg",
-                    "action": {
-                        "type": "postback",
-                        "label": "圓山飯店",
-                        "data": json.dumps(data)
-                    }
-              },
-                {
-                  "imageUrl": F"{end_point}/static/04_taipeizoo.jpg",
-                    "action": {
-                        "type": "postback",
-                        "label": "台北動物園",
-                        "data": json.dumps(data)
-                    }
-              },
-                {
-                  "imageUrl": F"{end_point}/static/05_nightmarket.jpg",
-                  "action": {
-                      "type": "postback",
-                      "label": "饒河夜市",
-                      "data": json.dumps(data)
-                  }
-              }
-            ]
-        }
-    }
-    return message
-
-
-def getLocationConfirmMessage(title, latitude, longitude):
-    data = {"latitude": latitude, "longitude": longitude,
-            "title": title, "action": "get_near"}
-    message = {
-        "type": "template",
-        "altText": "this is a confirm template",
-        "template": {
-                "type": "confirm",
-                "text": f"是否要搜尋 {title} 附近的景點？",
-                "actions": [
-                    {
-                        "type": "postback",
-                        "label": "是",
-                        "data": json.dumps(data),
-                        "displayText": "是",
-                    },
-                    {
-                        "type": "message",
-                        "label": "否",
-                        "text": "否"
-                    }
-                ]
-        }
-    }
-    return message
-
-
-def getPlayStickerMessage():
-    message = {
-        "type": "sticker",
-        "packageId": "446",
-        "stickerId": "1988"
-    }
-    return message
-
-
-def getTaipei101LocationMessage():
-    message = {
-        "type": "location",
-        "title": "Taipei 101",
-        "address": "台北市信義區信義路五段7號89樓",
-        "latitude": 25.034804599999998,
-        "longitude": 121.5655868
-    }
-    return message
-
-
-def getMRTVideoMessage(originalContentUrl=F"{end_point}/static/taipei_101_video.mp4"):
-    message = {
-        "type": "video",
-        "originalContentUrl": F"{end_point}/static/taipei_101_video.mp4",
-        "previewImageUrl": F"{end_point}/static/taipei_101.jpeg",
-        "trackingId": "track-id"
-    }
-    return message
-
-
-def getMRTSoundMessage():
-    message = dict()
-    message["type"] = "audio"
-    message["originalContentUrl"] = F"{end_point}/static/mrt_sound.m4a"
-    import audioread
-    with audioread.audio_open('static/mrt_sound.m4a') as f:
-        # totalsec contains the length in float
-        totalsec = f.duration
-    message["duration"] = totalsec * 1000
-    return message
-
-
-def getTaipei101ImageMessage(originalContentUrl=F"{end_point}/static/taipei_101.jpeg"):
-
-    return getImageMessage(originalContentUrl)
-
-
-def getImageMessage(originalContentUrl):
-    message = {
-        "type": "image",
-        "originalContentUrl": originalContentUrl,
-        "previewImageUrl": originalContentUrl
-    }
-    return message
 
 
 def replyMessage(payload):
@@ -520,88 +1057,3 @@ def allowed_file(filename):
 if __name__ == "__main__":
     app.debug = True
     app.run()
-
-
-# def getCallCarMessage(data):
-#     message = {
-#         "type": "template",
-#         "altText": "this is a template",
-#         "template": {
-#             "type": "buttons",
-#             "text": f"請選擇至 {data['title']} 預約叫車時間",
-#             "actions": [
-#               {
-#                   "type": "datetimepicker",
-#                   "label": "預約",
-#                   "data": json.dumps(data),
-#                   "mode": "datetime"
-#               }
-#             ]
-#         }
-#     }
-#     return message
-
-
-# def getTodayCovid19Message():
-#     response = requests.get(
-#         "https://covid-19.nchc.org.tw/api/covid19?CK=covid-19@nchc.org.tw&querydata=3001&limited=BGD", headers=HEADER)
-#     data = response.json()[0]
-#     date = data['a04']
-#     total_count = data['a05']
-#     count = data['a06']
-#     return F"日期：{date}, 人數：{count}, 確診總人數：{total_count}"
-
-
-# @app.route('/upload_file', methods=['POST'])
-# def upload_file():
-#     payload = dict()
-#     if request.method == 'POST':
-#         file = request.files['file']
-#         print("json:", request.json)
-#         form = request.form
-#         age = form['age']
-#         gender = ("男" if form['gender'] == "M" else "女") + "性"
-#         if file:
-#             filename = file.filename
-#             img_path = os.path.join(UPLOAD_FOLDER, filename)
-#             file.save(img_path)
-#             print(img_path)
-#             payload["to"] = my_line_id
-#             payload["messages"] = [getImageMessage(F"{end_point}/{img_path}"),
-#                                    {
-#                 "type": "text",
-#                 "text": F"年紀：{age}\n性別：{gender}"
-#             }
-#             ]
-#             pushMessage(payload)
-#     return 'OK'
-
-
-# @app.route('/line_login', methods=['GET'])
-# def line_login():
-#     if request.method == 'GET':
-#         code = request.args.get("code", None)
-#         state = request.args.get("state", None)
-
-#         if code and state:
-#             HEADERS = {'Content-Type': 'application/x-www-form-urlencoded'}
-#             url = "https://api.line.me/oauth2/v2.1/token"
-#             FormData = {"grant_type": 'authorization_code', "code": code, "redirect_uri": F"{end_point}/line_login",
-#                         "client_id": line_login_id, "client_secret": line_login_secret}
-#             data = parse.urlencode(FormData)
-#             content = requests.post(url=url, headers=HEADERS, data=data).text
-#             content = json.loads(content)
-#             url = "https://api.line.me/v2/profile"
-#             HEADERS = {
-#                 'Authorization': content["token_type"]+" "+content["access_token"]}
-#             content = requests.get(url=url, headers=HEADERS).text
-#             content = json.loads(content)
-#             name = content["displayName"]
-#             userID = content["userId"]
-#             pictureURL = content["pictureUrl"]
-#             statusMessage = content["statusMessage"]
-#             print(content)
-#             return render_template('profile.html', name=name, pictureURL=pictureURL, userID=userID, statusMessage=statusMessage)
-#         else:
-#             return render_template('login.html', client_id=line_login_id,
-#                                    end_point=end_point)
