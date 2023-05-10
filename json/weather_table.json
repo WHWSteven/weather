@@ -1,0 +1,570 @@
+{
+    "type": "flex",
+    "altText": "請選擇想查詢的縣市",
+    "contents": {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "請選擇想查詢的縣市",
+                    "weight": "bold",
+                    "size": "md",
+                    "decoration": "none",
+                    "align": "center",
+                    "gravity": "top"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "20px",
+                    "spacing": "sm",
+                    "contents": [
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "spacing": "none",
+                            "contents": [
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "基隆市",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "text": "基隆市天氣",
+                                                "label": "基隆市"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                },
+                                {
+                                    "type": "filler",
+                                    "flex": 1
+                                },
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "宜蘭縣",
+                                            "size": "16px",
+                                            "color": "#000000",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "宜蘭縣",
+                                                "text": "宜蘭縣天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "spacing": "none",
+                            "contents": [
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "臺北市",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "臺北市",
+                                                "text": "臺北市天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                },
+                                {
+                                    "type": "filler",
+                                    "flex": 1
+                                },
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "新北市",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "新北市",
+                                                "text": "新北市天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                }
+                            ],
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "spacing": "none",
+                            "contents": [
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "桃園市",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "桃園市",
+                                                "text": "桃園市天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                },
+                                {
+                                    "type": "filler",
+                                    "flex": 1
+                                },
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "桃園縣",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "桃園縣",
+                                                "text": "桃園縣天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                }
+                            ],
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "spacing": "none",
+                            "contents": [
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "新竹市",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "新竹市",
+                                                "text": "新竹市天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                },
+                                {
+                                    "type": "filler",
+                                    "flex": 1
+                                },
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "新竹縣",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "新竹縣",
+                                                "text": "新竹縣天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                }
+                            ],
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "spacing": "none",
+                            "contents": [
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "苗栗縣",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "苗栗縣",
+                                                "text": "苗栗縣天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                },
+                                {
+                                    "type": "filler",
+                                    "flex": 1
+                                },
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "臺中市",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "臺中市",
+                                                "text": "臺中市天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                }
+                            ],
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "spacing": "none",
+                            "contents": [
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "彰化縣",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "彰化縣",
+                                                "text": "彰化縣天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                },
+                                {
+                                    "type": "filler",
+                                    "flex": 1
+                                },
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "南投縣",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "南投縣",
+                                                "text": "南投縣天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                }
+                            ],
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "spacing": "none",
+                            "contents": [
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "雲林縣",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "雲林縣",
+                                                "text": "雲林縣天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                },
+                                {
+                                    "type": "filler",
+                                    "flex": 1
+                                },
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "嘉義市",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "嘉義市",
+                                                "text": "嘉義市天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                }
+                            ],
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "spacing": "none",
+                            "contents": [
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "嘉義縣",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "嘉義縣",
+                                                "text": "嘉義縣天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                },
+                                {
+                                    "type": "filler",
+                                    "flex": 1
+                                },
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "臺南市",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "臺南市",
+                                                "text": "臺南市天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                }
+                            ],
+                            "margin": "lg"
+                        },
+                        {
+                            "type": "box",
+                            "layout": "horizontal",
+                            "spacing": "none",
+                            "contents": [
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "高雄市",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "高雄市",
+                                                "text": "高雄市天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                },
+                                {
+                                    "type": "filler",
+                                    "flex": 1
+                                },
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "contents": [
+                                        {
+                                            "type": "text",
+                                            "text": "屏東縣",
+                                            "color": "#000000",
+                                            "size": "16px",
+                                            "flex": 1,
+                                            "action": {
+                                                "type": "message",
+                                                "label": "屏東縣",
+                                                "text": "屏東縣天氣"
+                                            },
+                                            "align": "center"
+                                        }
+                                    ],
+                                    "backgroundColor": "#E2E4E9",
+                                    "flex": 5,
+                                    "cornerRadius": "sm",
+                                    "paddingAll": "lg"
+                                }
+                            ],
+                            "margin": "lg"
+                        }
+                    ]
+                }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "horizontal",
+            "contents": [
+                {
+                    "type": "button",
+                    "margin": "none",
+                    "height": "sm",
+                    "style": "link",
+                    "color": "#6d6c6c",
+                    "gravity": "bottom",
+                    "action": {
+                        "type": "uri",
+                        "label": "資料來源：中央氣象局",
+                        "uri": "https://www.cwb.gov.tw/V8/C/"
+                    }
+                }
+            ]
+        }
+    }
+}
