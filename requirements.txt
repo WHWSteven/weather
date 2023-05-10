@@ -1,4 +1,11 @@
 line-bot-sdk
 flask
+requests
+pyChatGPT
+psycopg2
 openai
 gunicorn
+Flask
+audioread
+pytz
+bs4==0.0.1
